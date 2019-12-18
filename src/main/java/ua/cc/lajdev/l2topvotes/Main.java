@@ -12,13 +12,20 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Properties;
 import java.util.Random;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.SpringBootConfiguration;
 
 @SpringBootConfiguration
 public class Main {
+
+	private static Logger log = LogManager.getLogger(Main.class);
 
 	private static String connectionUrl;
 	private static String dbLogin;
@@ -34,12 +41,18 @@ public class Main {
 			dbLogin = properties.getProperty("db.login");
 			dbPassword = properties.getProperty("db.password");
 		} catch (ClassNotFoundException | IOException e) {
-			e.printStackTrace();
+			if (e instanceof ClassNotFoundException)
+				log.error("Cannot load driver", e);
+
+			if (e instanceof IOException)
+				log.error("Not found property file", e);
 		}
 
 	}
 
-	public static void main(String[] args) throws IOException, ParseException {
+	public static void main(String[] args) throws IOException, ParseException, InterruptedException {
+
+//		SpringApplication.run(Main.class, args);
 
 		try (Connection connection = DriverManager.getConnection(connectionUrl, dbLogin, dbPassword);
 				BufferedReader in = new BufferedReader(
@@ -65,6 +78,7 @@ public class Main {
 						if (charId != 0) {
 							addReward(charId, connection);
 							insertRecord(date, charName, connection);
+							log.info(charName + " received an award at " + LocalDate.now() + " " + LocalTime.now());
 						} else
 							continue;
 					}
@@ -96,7 +110,6 @@ public class Main {
 
 		try (PreparedStatement statement = connection
 				.prepareStatement("INSERT INTO votes (date, char_name) VALUES (?,?)");) {
-
 			statement.setString(1, date);
 			statement.setString(2, name);
 			statement.executeUpdate();
