@@ -52,7 +52,7 @@ public class Main {
 
 	public static void main(String[] args) throws IOException, ParseException, InterruptedException {
 
-//		SpringApplication.run(Main.class, args);
+		SpringApplication.run(Main.class, args);
 
 		try (Connection connection = DriverManager.getConnection(connectionUrl, dbLogin, dbPassword);
 				BufferedReader in = new BufferedReader(
@@ -62,29 +62,32 @@ public class Main {
 			String inputLine = null;
 			boolean isReadedFirstLine = false;
 
-			while ((inputLine = in.readLine()) != null) {
-				if (isReadedFirstLine == false) {
-					isReadedFirstLine = true;
-					continue;
-				} else {
-					date = inputLine.substring(0, 19);
-					charName = inputLine.substring(20).trim();
-
-					if (isRecordsPresent(date, charName, connection))
+			while (true) {
+				while ((inputLine = in.readLine()) != null) {
+					if (isReadedFirstLine == false) {
+						isReadedFirstLine = true;
 						continue;
-					else {
-						int charId = getIdByName(charName, connection);
+					} else {
+						date = inputLine.substring(0, 19);
+						charName = inputLine.substring(20).trim();
 
-						if (charId != 0) {
-							addReward(charId, connection);
-							insertRecord(date, charName, connection);
-							log.info(charName + " received an award at " + LocalDate.now() + " " + LocalTime.now());
-						} else
+						if (isRecordsPresent(date, charName, connection))
 							continue;
+						else {
+							int charId = getIdByName(charName, connection);
+
+							if (charId != 0) {
+								addReward(charId, connection);
+								insertRecord(date, charName, connection);
+								log.info(charName + " received an award at " + LocalDate.now() + " " + LocalTime.now());
+							} else
+								continue;
+						}
 					}
 				}
+				Thread.sleep(6000);
 			}
-		} catch (SQLException | IOException e) {
+		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 
@@ -140,7 +143,8 @@ public class Main {
 			statement.setInt(1, charId);
 			statement.setInt(2, new Random().nextInt(900000000));
 			statement.setInt(3, 4356);
-			statement.setInt(4, new Random().nextInt(10));
+			int countItems = new Random().nextInt(10);
+			statement.setInt(4, countItems == 0 ? countItems = 1 : countItems);
 			statement.setString(5, "INVENTORY");
 			statement.executeUpdate();
 		} catch (SQLException e) {
